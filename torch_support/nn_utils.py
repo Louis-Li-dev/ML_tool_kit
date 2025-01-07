@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 from typing import Union, Tuple, Any, List, Callable
 from tqdm import tqdm
+        
+
+
 def __extract_loader(loader: Any = None) -> Tuple[Any, Any]:
     """
     Extracts (inputs, labels) from a batch.
@@ -84,7 +87,7 @@ def training_loop(
     print_every: Union[int, None] = None,
     val_loader: torch.utils.data.DataLoader = None,
     keep_losses: bool = False,
-    train_step_func: Callable = None
+    train_step_func: Callable = default_train_step
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
@@ -122,11 +125,65 @@ def training_loop(
         The trained model (in-place updated).
     (Optional) List[float] training_losses
     (Optional) List[float] val_losses
-    """
 
-    # If user doesn't specify a custom train step, use the default
-    if train_step_func is None:
-        train_step_func = default_train_step
+    Example
+    -------
+    ```python
+    # Example model: a simple feed-forward network for classification
+    class SimpleNet(nn.Module):
+        def __init__(self, input_dim, hidden_dim, output_dim):
+            super().__init__()
+            self.layer1 = nn.Linear(input_dim, hidden_dim)
+            self.relu = nn.ReLU()
+            self.layer2 = nn.Linear(hidden_dim, output_dim)
+
+        def forward(self, x):
+            # x should have shape [batch_size, input_dim]
+            out = self.layer1(x)
+            out = self.relu(out)
+            out = self.layer2(out)
+            return out
+
+    # Example usage of the training_loop
+    if __name__ == "__main__":
+        # 1. Create some synthetic data (for demonstration)
+        #    Suppose we have 1000 samples, each with 20 features, and we want 3-class classification.
+        np.random.seed(42)
+        X = np.random.randn(10000, 20).astype(np.float32)
+        y = np.random.randint(0, 3, size=(10000,))
+
+        train_loader, val_loader = xy_to_tensordataset(X, y.astype(np.int64), val_ratio=.2, return_loader=True)
+
+        # 3. Initialize the model, loss, optimizer
+        model = SimpleNet(input_dim=20, hidden_dim=50, output_dim=3)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+        # 4. Define or import your training_loop function
+        # (Assuming you've already defined it in your code as shown previously.)
+        # from your_script_name import training_loop
+
+        # 5. Train the model
+        trained_model = training_loop(
+            model=model,
+            device=device,
+            train_loader=train_loader,
+            optimizer=optimizer,
+            criterion=criterion,
+            epochs=5,              # Number of epochs
+            val_loader=val_loader  # Use the validation loader to check val loss
+        )
+
+        # 6. After training, you can do further evaluation or inference
+        model.eval()
+        test_input = torch.randn(1, 20, device=device)  # A single sample
+        with torch.no_grad():
+            logits = trained_model(test_input)
+            predicted_label = torch.argmax(logits, dim=1)
+        print("Example inference on a single test sample:", predicted_label.item())
+        ```
+    """
 
     model.to(device)  # Move model parameters to the specified device
 
@@ -183,7 +240,7 @@ def training_loop(
             tqdm.write(f"Epoch [{epoch}/{epochs}] Validation Loss: {val_loss:.4f}\n")
 
     tqdm.write("Training complete.")
-
+    model.eval()
     # Return based on keep_losses
     if keep_losses:
         if val_loader is not None:

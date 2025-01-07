@@ -1,7 +1,157 @@
 import torch
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, Required
+from typing import Union, Tuple, List
+import numpy as np
+
+def sequential_x_y_split(
+        data: Union[np.ndarray, List[float]],  # The input sequential data (array or list of floats/integers).
+        look_back: int = 10,  # The number of time steps to include in each input sequence (window size).
+        stride: int = 1,  # The step size for moving the window through the data.
+        to_numpy: bool = True  # Whether to return the results as NumPy arrays (True) or as lists (False).
+) -> Tuple[Union[np.ndarray, List[List[float]]], Union[np.ndarray, List[float]]]:
+    """
+    Splits sequential data into input (x) and target (y) pairs for supervised learning.
+
+    Parameters:
+    - data (Union[np.ndarray, List[float]]): The sequential dataset to be split.
+    - look_back (int, optional): The size of the input sequence (window). Default is 10.
+    - stride (int, optional): The step size for moving the window. Default is 1.
+    - to_numpy (bool, optional): If True, the outputs are converted to NumPy arrays. Default is True.
+
+    Returns:
+    - Tuple[Union[np.ndarray, List[List[float]]], Union[np.ndarray, List[float]]]:
+        - x: The input sequences (shape: [num_samples, look_back]).
+        - y: The corresponding target values (shape: [num_samples]).
+    
+    Example:
+    --------
+    >>> import numpy as np
+    >>> data = np.arange(1, 21)  # Sequential data: [1, 2, ..., 20]
+    >>> x, y = sequential_x_y_split(data, look_back=3, stride=1, to_numpy=True)
+    >>> print("X:", x)
+    >>> print("Y:", y)
+    
+    Output:
+    --------
+    X: [[ 1  2  3]
+        [ 2  3  4]
+        [ 3  4  5]
+         ...
+        [16 17 18]
+        [17 18 19]]
+    Y: [ 4  5  6  ... 19 20]
+    """
+    x = []  # List to store input sequences.
+    y = []  # List to store target values.
+
+    # Slide the window through the data
+    for i in range(look_back, len(data), stride):
+        # Append the input sequence (x) and target value (y)
+        x.append(data[i - look_back: i])
+        y.append(data[i])
+
+    # Return as NumPy arrays or lists
+    if to_numpy:
+        return np.array(x), np.array(y)
+    else:
+        return x, y
+
+
+
+def one_cut_split(
+    data: Union[np.ndarray, list],
+    val_split: Optional[Union[float, int]] = None, 
+    test_split: Optional[Union[float, int]] = None
+) -> Union[
+    Tuple[np.ndarray],
+    Tuple[np.ndarray, np.ndarray],
+    Tuple[np.ndarray, np.ndarray, np.ndarray]
+]:
+    """
+    Splits the data into training, validation, and testing sets based on provided split parameters.
+
+    Parameters:
+    - data (np.ndarray or list): The sequential data to be split.
+    - val_split (Optional[Union[float, int]]): Validation split ratio or starting index.
+    - test_split (Optional[Union[float, int]]): Testing split ratio or starting index.
+
+    Returns:
+    - Tuple containing training, validation, and/or testing splits.
+    """
+    if data is None:
+        raise ValueError("Data must be provided for splitting.")
+    if isinstance(data, list):
+        data = np.array(data)
+    elif not isinstance(data, np.ndarray):
+        raise TypeError("Data must be a NumPy ndarray or list.")
+    
+    total_length = len(data)
+    if total_length == 0:
+        raise ValueError("Data is empty.")
+    
+    # Initialize split indices
+    train_end = total_length  # Default end of training data
+    val_start = None
+    test_start = None
+
+    # Handle test split first
+    if test_split is not None:
+        if isinstance(test_split, float):
+            if not 0 < test_split < 1:
+                raise ValueError("test_split as float must be between 0 and 1.")
+            test_size = int(total_length * test_split)
+        elif isinstance(test_split, int):
+            if not 0 <= test_split < total_length:
+                raise ValueError("test_split as int must be within the data range.")
+            test_size = total_length - test_split
+        else:
+            raise TypeError("test_split must be either float or int.")
+
+        test_start = total_length - test_size
+        train_end = test_start  # Training ends before the test set starts
+
+    # Handle validation split
+    if val_split is not None:
+        if isinstance(val_split, float):
+            if not 0 < val_split < 1:
+                raise ValueError("val_split as float must be between 0 and 1.")
+            val_size = int((train_end) * val_split)  # Use the remaining portion for validation
+        elif isinstance(val_split, int):
+            if not 0 <= val_split < train_end:
+                raise ValueError("val_split as int must be within the training data range.")
+            val_size = train_end - val_split
+        else:
+            raise TypeError("val_split must be either float or int.")
+
+        val_start = train_end - val_size
+        train_end = val_start  # Training ends before the validation set starts
+
+    # Perform slicing
+    train_data = data[:train_end]
+
+    if val_split is not None:
+        val_data = data[val_start:val_start + val_size]
+    else:
+        val_data = None
+
+    if test_split is not None:
+        test_data = data[test_start:]
+    else:
+        test_data = None
+
+    # Prepare return tuple
+    if val_data is not None and test_data is not None:
+        return train_data, val_data, test_data
+    elif val_data is not None:
+        return train_data, val_data
+    elif test_data is not None:
+        return train_data, test_data
+    else:
+        return (train_data,)
+
+
 
 def xy_to_tensordataset(
     X,
@@ -14,7 +164,8 @@ def xy_to_tensordataset(
     return_loader: bool = False,
     batch_size: int = 32,
     # You can add more DataLoader params if desired (e.g., num_workers, pin_memory, drop_last)
-    drop_last: bool = False
+    drop_last: bool = False,
+    unsqueeze_last: bool = False
 ) -> Union[
     TensorDataset,
     Tuple[TensorDataset, TensorDataset],
@@ -106,9 +257,11 @@ def xy_to_tensordataset(
                 f"Expected torch.Tensor, np.ndarray, list, or tuple, but got {type(arr)}."
             )
 
-    X_t = to_tensor(X, "X")
-    y_t = to_tensor(y, "y")
-
+    X_t = to_tensor(X, "X").float()
+    y_t = to_tensor(y, "y").float()
+    if unsqueeze_last:
+        X_t = X_t.unsqueeze(-1)
+        y_t = y_t.unsqueeze(-1)
     # --- 2) Check consistent lengths (first dimension) ---
     if X_t.shape[0] != y_t.shape[0]:
         raise ValueError(
