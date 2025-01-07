@@ -11,7 +11,8 @@ setuptools.setup(
         "tqdm==4.66.5",
         "torch==2.4.0", # mine torch==2.4.0+cu118
         "numpy==1.26.4",
-        "pandas==2.2.3"
+        "pandas==2.2.3",
+        "matplotlib==3.10.0"
     ],
     python_requires=">=3.7",          
 )
