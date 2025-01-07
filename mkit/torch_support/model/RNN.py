@@ -80,6 +80,7 @@ class ResidualIndRNNBlock(nn.Module):
         self.recurrent_weights = self.recurrent_weights.to(device)
         self.bias = self.bias.to(device)
 
+
         # Initialize hidden state on the correct device
         hidden = torch.zeros(batch_size, self.hidden_dim, device=device)
         
