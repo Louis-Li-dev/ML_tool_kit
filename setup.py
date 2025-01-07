@@ -6,7 +6,7 @@ setuptools.setup(
     version="0.1.0",                 
     author="AnSyu Li",
     author_email="yessir0621@gmail.com",
-    packages=setuptools.find_packages(),  
+    packages=setuptools.find_packages(include=['mkit', 'mkit.*']),  
     install_requires=[
         "tqdm==4.66.5",
         "torch==2.4.0", # mine torch==2.4.0+cu118
