@@ -3,9 +3,10 @@ import setuptools
 
 setuptools.setup(
     name="ML-toolkit",                
-    version="0.1.0",                 
+    version="0.1.1",                 
     author="AnSyu Li",
     author_email="yessir0621@gmail.com",
+    url="https://github.com/yourusername/ml-toolkit",
     packages=setuptools.find_packages(include=['mkit', 'mkit.*']),  
     install_requires=[
         "tqdm==4.66.5",
