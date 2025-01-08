@@ -118,6 +118,26 @@ def training_loop(
         A function with signature:
            (model, optimizer, criterion, loader, device) -> torch.Tensor (loss).
         Defaults to `default_train_step`, which expects (inputs, targets).
+    
+    - Implement your own training step function
+    
+    >>> def your_step_funct(
+    >>>     model: nn.Module,
+    >>>     optimizer: torch.optim.Optimizer,
+    >>>     criterion: nn.Module,
+    >>>     loader: Any,  # The entire batch (whatever the DataLoader yields)
+    >>>     device: torch.device 
+    >>> ) -> torch.Tensor: # loss
+    >>>     x, y, z, ... = loader
+    >>>     x = x.to(device)
+    >>>     y = y.to(device)
+    >>>     ...
+    >>>     optimizer.zero_grad()
+    >>>     output1, output2, ... = model(x, y, z, ...) # forward
+    >>>     loss = criterion(...) # loss
+    >>>     loss.backward() # back propagation
+    >>>     optimizer.step() 
+    >>>     return loss
 
     Returns
     -------
@@ -182,7 +202,7 @@ def training_loop(
             logits = trained_model(test_input)
             predicted_label = torch.argmax(logits, dim=1)
         print("Example inference on a single test sample:", predicted_label.item())
-        ```
+    ```
     """
 
     model.to(device)  # Move model parameters to the specified device

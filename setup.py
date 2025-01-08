@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="ML-toolkit",                
-    version="0.1.4",                 
+    version="0.1.5",                 
     author="AnSyu Li",
     author_email="yessir0621@gmail.com",
     url="https://github.com/yourusername/ml-toolkit",
