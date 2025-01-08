@@ -1,8 +1,8 @@
 import torch
 import numpy as np
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, Dataset
 from typing import Union, Tuple, Optional, Required
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Callable
 import numpy as np
 
 def sequential_x_y_split(
@@ -393,3 +393,33 @@ def xy_to_tensordataset(
                 drop_last=False
             )
             return (train_loader, val_loader, test_loader)
+
+
+def _default_getitem(dataset, index):
+    data, label = dataset[index]
+    return data, label
+
+class UnsqueezeDataset(Dataset):
+    """
+    A wrapper for a dataset to unsqueeze the labels along a specified dimension.
+    """
+    def __init__(self, dataset, funct_implemented: Callable = _default_getitem):
+        """
+        Args:
+            dataset (Dataset): The original dataset to wrap.
+            funct_implemented (Callable): The custom function to get items from a dataset
+        """
+        self.dataset = dataset
+        self.funct_implemented = funct_implemented
+
+    def __getitem__(self, index):
+        """
+        Returns a tuple of (data, label) with the label unsqueezed.
+        """
+        return self.funct_implemented(self.dataset, index)
+
+    def __len__(self):
+        """
+        Returns the length of the dataset.
+        """
+        return len(self.dataset)
