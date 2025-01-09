@@ -5,6 +5,37 @@ from torch_geometric.data import Data
 from typing import Union, Tuple, List, Callable, Any, Optional
 import numpy as np
 
+class MaskedGraphDataset:
+    def __init__(self, data, mask_type):
+        """
+        A dataset wrapper for PyTorch Geometric Data object, using train, val, or test masks.
+
+        Args:
+            data (Data): PyTorch Geometric Data object.
+            mask_type (str): One of 'train', 'val', or 'test', indicating the mask to use.
+        """
+        assert mask_type in ['train', 'val', 'test'], "mask_type must be 'train', 'val', or 'test'"
+        self.data = data
+        self.mask = getattr(data, f"{mask_type}_mask")  # Boolean mask for nodes
+
+    def __len__(self):
+        return self.mask.sum().item()  # Number of nodes in the mask
+
+    def __getitem__(self, idx):
+        """
+        Returns a subgraph centered on a single node with its features and label.
+        
+        Args:
+            idx (int): Index within the subset (filtered by the mask).
+
+        Returns:
+            x (Tensor): Node features.
+            y (Tensor): Node label.
+            node_idx (int): Original node index in the graph.
+        """
+        indices = self.mask.nonzero(as_tuple=False).squeeze()
+        node_idx = indices[idx]  # Map dataset index to graph node index
+        return self.data.x[node_idx], self.data.y[node_idx], node_idx
 def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
     """
     Splits the data into train, validation, and test sets with masks.
