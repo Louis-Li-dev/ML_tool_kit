@@ -36,6 +36,7 @@ class MaskedGraphDataset:
         indices = self.mask.nonzero(as_tuple=False).squeeze()
         node_idx = indices[idx]  # Map dataset index to graph node index
         return self.data.x[node_idx], self.data.y[node_idx], node_idx
+    
 def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
     """
     Splits the data into train, validation, and test sets with masks.
