@@ -13,7 +13,8 @@ setuptools.setup(
         "torch==2.4.0", # mine torch==2.4.0+cu118
         "numpy==1.26.4",
         "pandas==2.2.3",
-        "matplotlib==3.10.0"
+        "matplotlib==3.10.0",
+        "torch-geometric==2.5.3"
     ],
     python_requires=">=3.7",          
 )
