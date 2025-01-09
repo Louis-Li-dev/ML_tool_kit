@@ -6,7 +6,7 @@ setuptools.setup(
     version="0.1.6",                 
     author="AnSyu Li",
     author_email="yessir0621@gmail.com",
-    url="https://github.com/yourusername/ml-toolkit",
+    url="https://github.com/Louis-Li-dev/ML_tool_kit",
     packages=setuptools.find_packages(include=['mkit', 'mkit.*']),  
     install_requires=[
         "tqdm==4.66.5",
