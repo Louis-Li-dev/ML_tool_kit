@@ -5,6 +5,43 @@ from torch_geometric.data import Data
 from typing import Union, Tuple, List, Callable, Any, Optional
 import numpy as np
 
+def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
+    """
+    Splits the data into train, validation, and test sets with masks.
+    
+    Args:
+        data (Data): PyTorch Geometric Data object with x, edge_index, and y attributes.
+        train_ratio (float): Proportion of nodes to use for training.
+        val_ratio (float): Proportion of nodes to use for validation.
+        
+    Returns:
+        Data: Updated data object with train_mask, val_mask, and test_mask.
+    """
+    num_nodes = data.num_nodes
+    indices = np.arange(num_nodes)
+    np.random.shuffle(indices)
+
+    # Define split sizes
+    train_size = int(train_ratio * num_nodes)
+    val_size = int(val_ratio * num_nodes)
+    test_size = num_nodes - train_size - val_size
+
+    # Get indices for each split
+    train_indices = torch.tensor(indices[:train_size], dtype=torch.long)
+    val_indices = torch.tensor(indices[train_size:train_size + val_size], dtype=torch.long)
+    test_indices = torch.tensor(indices[train_size + val_size:], dtype=torch.long)
+
+    # Initialize masks
+    data.train_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    data.val_mask = torch.zeros(num_nodes, dtype=torch.bool)
+    data.test_mask = torch.zeros(num_nodes, dtype=torch.bool)
+
+    # Assign masks
+    data.train_mask[train_indices] = True
+    data.val_mask[val_indices] = True
+    data.test_mask[test_indices] = True
+
+    return data
 
 def sequential_x_y_split(
         data: Union[np.ndarray, List[float]],  # The input sequential data (array or list of floats/integers).
