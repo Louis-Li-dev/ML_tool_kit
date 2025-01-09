@@ -5,34 +5,34 @@ from tqdm import tqdm
         
 
 
-def __extract_loader(loader: Any = None) -> Tuple[Any, Any]:
+def __extract_batch(batch: Any = None) -> Tuple[Any, Any]:
     """
     Extracts (inputs, labels) from a batch.
 
     Parameters
     -----------
-    loader : Any
+    batch : Any
 
     Returns
     -------
     inputs, labels : Tuple[Any, Any]
     """
-    if loader is None:
+    if batch is None:
         raise ValueError("Loader can't be None")
-    inputs, labels = loader
+    inputs, labels = batch
     return inputs, labels
 
 def default_train_step(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     criterion: nn.Module,
-    loader: Any,  # The entire batch (whatever the DataLoader yields)
+    batch: Any,  # The entire batch (whatever the DataLoader yields)
     device: torch.device
 ) -> torch.Tensor:
     """
-    Default train step using the entire 'loader' object.
+    Default train step using the entire batch object.
 
-    1) Parse the loader into (inputs, targets).
+    1) Parse the batch into (inputs, targets).
     2) Check shape/dtype (for example, for CrossEntropyLoss).
     3) Move to device.
     4) Forward pass, loss, backward pass, optimizer step.
@@ -43,8 +43,8 @@ def default_train_step(
         The computed loss (scalar) for this batch.
     """
 
-    # 1) Extract (inputs, targets) from the loader
-    inputs, targets = __extract_loader(loader)
+    # 1) Extract (inputs, targets) from the batch
+    inputs, targets = __extract_batch(batch)
 
     # 2) (Optional) Error detection / validation
     #    If using CrossEntropyLoss, confirm targets are long
@@ -91,7 +91,7 @@ def training_loop(
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
-    The entire 'loader' (batch) is provided to the train_step_func, enabling custom logic.
+    The entire batch is provided to the train_step_func, enabling custom logic.
 
     Parameters
     ----------
@@ -116,7 +116,7 @@ def training_loop(
         If True, store training/validation losses in lists and return them.
     train_step_func : callable, optional
         A function with signature:
-           (model, optimizer, criterion, loader, device) -> torch.Tensor (loss).
+           (model, optimizer, criterion, batch, device) -> torch.Tensor (loss).
         Defaults to `default_train_step`, which expects (inputs, targets).
     
     - Implement your own training step function
@@ -125,10 +125,10 @@ def training_loop(
     >>>     model: nn.Module,
     >>>     optimizer: torch.optim.Optimizer,
     >>>     criterion: nn.Module,
-    >>>     loader: Any,  # The entire batch (whatever the DataLoader yields)
+    >>>     batch: Any,  # The entire batch (whatever the DataLoader yields)
     >>>     device: torch.device 
     >>> ) -> torch.Tensor: # loss
-    >>>     x, y, z, ... = loader
+    >>>     x, y, z, ... = batch
     >>>     x = x.to(device)
     >>>     y = y.to(device)
     >>>     ...
@@ -215,7 +215,7 @@ def training_loop(
         running_loss = 0.0
 
         # Iterate over training data
-        for batch_idx, loader in enumerate(
+        for batch_idx, batch in enumerate(
             tqdm(train_loader, desc=f"EPOCH {epoch}/{epochs}", leave=True), start=1
         ):
             # -- Use the train_step_func which handles everything for this batch --
@@ -223,7 +223,7 @@ def training_loop(
                 model=model,
                 optimizer=optimizer,
                 criterion=criterion,
-                loader=loader,
+                batch=batch,
                 device=device
             )
 
@@ -248,7 +248,7 @@ def training_loop(
             val_loss = 0.0
             with torch.no_grad():
                 for val_data in val_loader:
-                    val_inputs, val_targets = __extract_loader(val_data)
+                    val_inputs, val_targets = __extract_batch(val_data)
                     val_inputs, val_targets = val_inputs.to(device), val_targets.to(device)
 
                     val_outputs = model(val_inputs)

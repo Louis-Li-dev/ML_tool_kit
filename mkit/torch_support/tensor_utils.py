@@ -1,15 +1,16 @@
 import torch
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader, Dataset
-from typing import Union, Tuple, Optional, Required
-from typing import Union, Tuple, List, Callable
+from torch_geometric.data import Data
+from typing import Union, Tuple, List, Callable, Any, Optional
 import numpy as np
+
 
 def sequential_x_y_split(
         data: Union[np.ndarray, List[float]],  # The input sequential data (array or list of floats/integers).
         look_back: int = 10,  # The number of time steps to include in each input sequence (window size).
         stride: int = 1,  # The step size for moving the window through the data.
-        to_numpy: bool = True  # Whether to return the results as NumPy arrays (True) or as lists (False).
+        to_numpy: bool = True,  # Whether to return the results as NumPy arrays (True) or as lists (False).
 ) -> Tuple[Union[np.ndarray, List[List[float]]], Union[np.ndarray, List[float]]]:
     """
     Splits sequential data into input (x) and target (y) pairs for supervised learning.
@@ -19,7 +20,7 @@ def sequential_x_y_split(
     - look_back (int, optional): The size of the input sequence (window). Default is 10.
     - stride (int, optional): The step size for moving the window. Default is 1.
     - to_numpy (bool, optional): If True, the outputs are converted to NumPy arrays. Default is True.
-
+    
     Returns:
     - Tuple[Union[np.ndarray, List[List[float]]], Union[np.ndarray, List[float]]]:
         - x: The input sequences (shape: [num_samples, look_back]).
@@ -158,6 +159,7 @@ def xy_to_tensordataset(
     y,
     val_ratio: float = 0.0,
     test_ratio: float = 0.0,
+    data_object: Any = TensorDataset,
     shuffle: bool = True,
     random_seed: int = 42,
     # NEW PARAMETERS FOR DATALOADER
@@ -194,6 +196,9 @@ def xy_to_tensordataset(
     test_ratio : float, optional
         Fraction of data to go into the test set. Default is 0.0 (no test set).
 
+    data_object : Any, optional
+        The data type the returned dataset would have. Default is TensorDataset
+    
     shuffle : bool, optional
         Whether to shuffle the entire dataset before splitting (for train/val/test).
         By default True.
@@ -301,11 +306,11 @@ def xy_to_tensordataset(
     test_indices = indices[train_size + val_size :]            # could be empty
 
     # Helper to slice X, y and return a TensorDataset
-    def slice_xy(idxs):
-        return TensorDataset(X_t[idxs], y_t[idxs])
+    def slice_xy(idxs, data_object):
+        return data_object(X_t[idxs], y_t[idxs])
 
     # --- 6) Build the subsets (TensorDataset) ---
-    train_ds = slice_xy(train_indices)
+    train_ds = slice_xy(train_indices, data_object)
 
     # Decide how many subsets we'll have
     has_val = (val_size > 0)
@@ -349,7 +354,7 @@ def xy_to_tensordataset(
 
     elif not has_val and has_test:
         # 6C) Return (train, test)
-        test_ds = slice_xy(test_indices)
+        test_ds = slice_xy(test_indices, data_object)
         if not return_loader:
             return (train_ds, test_ds)
         else:
@@ -369,8 +374,8 @@ def xy_to_tensordataset(
 
     else:
         # 6D) Return (train, val, test)
-        val_ds = slice_xy(val_indices)
-        test_ds = slice_xy(test_indices)
+        val_ds = slice_xy(val_indices, data_object)
+        test_ds = slice_xy(test_indices, data_object)
         if not return_loader:
             return (train_ds, val_ds, test_ds)
         else:
@@ -423,3 +428,5 @@ class UnsqueezeDataset(Dataset):
         Returns the length of the dataset.
         """
         return len(self.dataset)
+    
+    
