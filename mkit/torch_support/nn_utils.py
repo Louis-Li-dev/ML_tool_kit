@@ -235,7 +235,7 @@ def training_loop(
                 tqdm.write(
                     f"Epoch [{epoch}/{epochs}] "
                     f"Batch [{batch_idx}/{len(train_loader)}] "
-                    f"Train Loss: {avg_loss:.4f}"
+                    f"Training Loss: {avg_loss:.4f}"
                 )
                 running_loss = 0.0
 
@@ -243,7 +243,7 @@ def training_loop(
             training_losses.append(loss.item())
         tqdm.write(
             f"Epoch [{epoch}/{epochs}] "
-            f"Train Loss: {train_loss/len(train_loader):.4f}", end=" "
+            f"Training Loss: {train_loss/len(train_loader):.4f}", end=" "
         )
         # Validate (if val_loader is provided)
         if val_loader is not None:
@@ -260,7 +260,7 @@ def training_loop(
 
             val_loss /= len(val_loader)
             val_losses.append(val_loss)
-            tqdm.write(f"Epoch [{epoch}/{epochs}] Validation Loss: {val_loss:.4f}\n")
+            tqdm.write(f" Validation Loss: {val_loss:.4f}\n")
 
     tqdm.write("Training complete.")
     model.eval()
