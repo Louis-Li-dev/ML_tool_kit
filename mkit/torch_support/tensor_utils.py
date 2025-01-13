@@ -236,7 +236,9 @@ def xy_to_tensordataset(
     batch_size: int = 32,
     # You can add more DataLoader params if desired (e.g., num_workers, pin_memory, drop_last)
     drop_last: bool = False,
-    unsqueeze_last: bool = False
+    unsqueeze_last: bool = False,
+    input_dtype: torch.dtype = None,
+    output_dtype: torch.dtype = None
 ) -> Union[
     TensorDataset,
     Tuple[TensorDataset, TensorDataset],
@@ -284,6 +286,11 @@ def xy_to_tensordataset(
     drop_last : bool, optional
         Whether to drop the last incomplete batch (if return_loader=True). Default False.
 
+    input_dtype : torch.dtype, optional
+        Whether to set the dtype for the input tensors
+
+    output_dtype : torch.dtype, optional
+        Whether to set the dtype for the output tensors
     Returns
     -------
     If return_loader=False:
@@ -331,8 +338,11 @@ def xy_to_tensordataset(
                 f"Expected torch.Tensor, np.ndarray, list, or tuple, but got {type(arr)}."
             )
 
-    X_t = to_tensor(X, "X").float()
-    y_t = to_tensor(y, "y").float()
+    X_t = to_tensor(X, "X")
+    y_t = to_tensor(y, "y")
+    if input_dtype is not None: X_t = X_t.astype(input_dtype)
+    if output_dtype is not None: y_t = y_t.astype(output_dtype)
+
     if unsqueeze_last:
         X_t = X_t.unsqueeze(-1)
         y_t = y_t.unsqueeze(-1)
