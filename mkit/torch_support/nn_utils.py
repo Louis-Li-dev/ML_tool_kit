@@ -213,7 +213,7 @@ def training_loop(
     for epoch in range(1, epochs + 1):
         model.train()
         running_loss = 0.0
-
+        train_loss = 0.0
         # Iterate over training data
         for batch_idx, batch in enumerate(
             tqdm(train_loader, desc=f"EPOCH {epoch}/{epochs}", leave=True), start=1
@@ -228,7 +228,7 @@ def training_loop(
             )
 
             running_loss += loss.item()
-
+            train_loss += loss.item()
             # Print batch-by-batch info if print_every is set
             if print_every is not None and batch_idx % print_every == 0:
                 avg_loss = running_loss / print_every
@@ -241,7 +241,10 @@ def training_loop(
 
             # Keep track of each batch's loss
             training_losses.append(loss.item())
-
+        tqdm.write(
+            f"Epoch [{epoch}/{epochs}] "
+            f"Train Loss: {train_loss/len(train_loader):.4f}", end=" "
+        )
         # Validate (if val_loader is provided)
         if val_loader is not None:
             model.eval()
