@@ -340,8 +340,8 @@ def xy_to_tensordataset(
 
     X_t = to_tensor(X, "X")
     y_t = to_tensor(y, "y")
-    if input_dtype is not None: X_t = X_t.astype(input_dtype)
-    if output_dtype is not None: y_t = y_t.astype(output_dtype)
+    if input_dtype is not None: X_t = X_t.to(input_dtype)
+    if output_dtype is not None: y_t = y_t.to(output_dtype)
 
     if unsqueeze_last:
         X_t = X_t.unsqueeze(-1)
