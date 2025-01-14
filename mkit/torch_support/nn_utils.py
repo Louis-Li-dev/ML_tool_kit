@@ -43,31 +43,12 @@ def default_train_step(
         The computed loss (scalar) for this batch.
     """
 
-    # 1) Extract (inputs, targets) from the batch
     inputs, targets = __extract_batch(batch)
 
-    # 2) (Optional) Error detection / validation
-    #    If using CrossEntropyLoss, confirm targets are long
-    if isinstance(criterion, nn.CrossEntropyLoss) and targets.dtype not in (torch.long, torch.int64):
-        raise TypeError(
-            f"Targets must be torch.long for CrossEntropyLoss. Found: {targets.dtype}."
-        )
-    # Check batch size
-    if inputs.shape[0] != targets.shape[0]:
-        raise ValueError(
-            f"Mismatch in batch size: inputs has {inputs.shape[0]} samples, "
-            f"but targets has {targets.shape[0]} samples."
-        )
-    # Check that inputs are floating point (common for typical models)
-    if not torch.is_floating_point(inputs):
-        raise TypeError(
-            f"Inputs should be a floating-point tensor (e.g., float32). Found: {inputs.dtype}."
-        )
 
-    # 3) Move data to device
+
     inputs, targets = inputs.to(device), targets.to(device)
 
-    # 4) Forward pass, loss, backward pass, optimizer step
     optimizer.zero_grad()
     outputs = model(inputs)
     loss = criterion(outputs, targets)
