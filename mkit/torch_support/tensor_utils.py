@@ -411,7 +411,7 @@ def xy_to_tensordataset(
 
     elif has_val and not has_test:
         # 6B) Return (train, val)
-        val_ds = slice_xy(val_indices)
+        val_ds = slice_xy(val_indices, data_object)
         if not return_loader:
             return (train_ds, val_ds)
         else:
