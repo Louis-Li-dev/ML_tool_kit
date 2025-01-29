@@ -37,6 +37,51 @@ class MaskedGraphDataset:
         node_idx = indices[idx]  # Map dataset index to graph node index
         return self.data.x[node_idx], self.data.y[node_idx], node_idx
     
+
+
+def x_y_sequences(
+    data: Union[np.ndarray, torch.Tensor], 
+    seq_len: int, 
+    forecast_horizon: int = 0,
+    return_torch: bool = True,
+    output_dtype = torch.float32
+    ):
+    """
+    Creates input and target sequences from the long time series data.
+    This is often used in transformer structure.
+    
+    Args:
+      - data (Data): 1D array containing time-series data.
+      - seq_len: Length of the sequence window used for training.
+      - forecast_horizon: Offset for target sequences. If 0, the target is identical to the input sequence.
+      - return_torch (bool) default = True: return data type.
+      - output_dtype = torch.float32: output data type.
+    
+    Returns:
+      - x: Tensor of shape (num_sequences, seq_len, 1)
+      - y: Tensor of shape (num_sequences, seq_len, 1)
+      
+    For example, with forecast_horizon > 0:
+      x[i] = data[i : i + seq_len]
+      y[i] = data[i + forecast_horizon : i + forecast_horizon + seq_len]
+    """
+    x_seqs = []
+    y_seqs = []
+    total_steps = len(data)
+    # Create windows such that we don't go out-of-bound.
+    for i in range(total_steps - seq_len - forecast_horizon + 1):
+        x_window = data[i: i + seq_len]
+        y_window = data[i + forecast_horizon: i + forecast_horizon + seq_len]
+        x_seqs.append(x_window)
+        y_seqs.append(y_window)
+    
+    x = np.array(x_seqs).reshape(-1, seq_len, 1)
+    y = np.array(y_seqs).reshape(-1, seq_len, 1)
+    if return_torch: return torch.tensor(x, dtype=output_dtype), torch.tensor(y, dtype=output_dtype)
+    else: return x.astype(output_dtype), x.astype(output_dtype)
+
+
+
 def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
     """
     Splits the data into train, validation, and test sets with masks.
