@@ -160,6 +160,7 @@ def k_fold_validation(
         test_subset = Subset(dataset, val_ids)
         result = procedure(train_subset, test_subset, **kwargs)
         results_from_fold.append(result)
+        tqdm.write('\n')
     return results_from_fold
 
 def sequential_x_y_split(
