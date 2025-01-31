@@ -123,10 +123,14 @@ def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
 
     return data
 
+
+
+
 def k_fold_validation(
-        dataset: torch.utils.data.Dataset = None,
+        dataset: Union[torch.utils.data.Dataset, Tuple] = None,
         n_splits: int = 5,
         procedure: callable = None,
+        shuffle: bool = False,
         **kwargs
     ) -> List[Any]:
     """
@@ -136,31 +140,46 @@ def k_fold_validation(
     - dataset (torch.utils.data.Dataset): The dataset to split.
     - n_splits (int): Number of folds.
     - procedure (callable): Function to execute on each fold. Should accept (train_subset, test_subset, **kwargs).
+    - shuffle (bool): Shuffle the dataset for K-fold.
     - **kwargs: Additional keyword arguments to pass to the procedure.
 
     Return:
     - Return a list of results returned from your self-defined procedure.
 
     Examples:
-    >>> N_SPLITS = 5
-    >>> dataset = MNIST(root='./data', train=False, download=True, transform=transform)
-    >>> def procedure(train_subset, test_subset, **kwargs):
-    >>>     ...
-    >>> k_fold_validation(dataset, procedure=procedure)
+    - Deep Learning Examples
+        >>> N_SPLITS = 5
+        >>> dataset = MNIST(root='./data', train=False, download=True, transform=transform)
+        >>> def procedure(train_subset, test_subset, **kwargs):
+        >>>     ...
+        >>> k_fold_validation(dataset, procedure=procedure)
+    - Machine Learning Examples
+        >>> 
+
     """
     if dataset is None:
         raise ValueError("Dataset must be provided.")
-
-    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
     results_from_fold = []
-    for fold, (train_ids, val_ids) in enumerate(kfold.split(dataset)):
-        tqdm.write(f"Current Fold: [{fold + 1}/{n_splits}]")
-        tqdm.write(f"Training Data Size: {len(train_ids)}; Testing Data Size: {len(val_ids)}")
-        train_subset = Subset(dataset, train_ids)
-        test_subset = Subset(dataset, val_ids)
-        result = procedure(train_subset, test_subset, **kwargs)
-        results_from_fold.append(result)
-        tqdm.write('\n')
+    kfold = KFold(n_splits=n_splits, shuffle=shuffle, random_state=42)
+        
+    if isinstance(dataset, Tuple):
+        for fold, (train_ids, val_ids) in enumerate(kfold.split(*dataset)):
+            tqdm.write(f"Current Fold: [{fold + 1}/{n_splits}]")
+            tqdm.write(f"Training Data Size: {len(train_ids)}; Testing Data Size: {len(val_ids)}")
+            train_subset = tuple([ele[train_ids] for ele in dataset])
+            test_subset = tuple([ele[val_ids] for ele in dataset])
+            result = procedure(train_subset, test_subset)
+            results_from_fold.append(result)
+            tqdm.write('\n')
+    else:
+        for fold, (train_ids, val_ids) in enumerate(kfold.split(dataset)):
+            tqdm.write(f"Current Fold: [{fold + 1}/{n_splits}]")
+            tqdm.write(f"Training Data Size: {len(train_ids)}; Testing Data Size: {len(val_ids)}")
+            train_subset = Subset(dataset, train_ids)
+            test_subset = Subset(dataset, val_ids)
+            result = procedure(train_subset, test_subset, **kwargs)
+            results_from_fold.append(result)
+            tqdm.write('\n')
     return results_from_fold
 
 def sequential_x_y_split(
