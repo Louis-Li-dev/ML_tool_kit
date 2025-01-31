@@ -122,12 +122,13 @@ def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
     data.test_mask[test_indices] = True
 
     return data
+
 def k_fold_validation(
         dataset: torch.utils.data.Dataset = None,
         n_splits: int = 5,
         procedure: callable = None,
         **kwargs
-    ):
+    ) -> List[Any]:
     """
     Performs K-Fold Cross Validation on a given dataset.
 
@@ -136,6 +137,9 @@ def k_fold_validation(
     - n_splits (int): Number of folds.
     - procedure (callable): Function to execute on each fold. Should accept (train_subset, test_subset, **kwargs).
     - **kwargs: Additional keyword arguments to pass to the procedure.
+
+    Return:
+    - Return a list of results returned from your self-defined procedure.
 
     Examples:
     >>> N_SPLITS = 5
@@ -148,14 +152,15 @@ def k_fold_validation(
         raise ValueError("Dataset must be provided.")
 
     kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-
+    results_from_fold = []
     for fold, (train_ids, val_ids) in enumerate(kfold.split(dataset)):
         tqdm.write(f"Current Fold: [{fold + 1}/{n_splits}]")
         tqdm.write(f"Training Data Size: {len(train_ids)}; Testing Data Size: {len(val_ids)}")
         train_subset = Subset(dataset, train_ids)
         test_subset = Subset(dataset, val_ids)
-        procedure(train_subset, test_subset, **kwargs)
-
+        result = procedure(train_subset, test_subset, **kwargs)
+        results_from_fold.append(result)
+    return results_from_fold
 
 def sequential_x_y_split(
         data: Union[np.ndarray, List[float]],  # The input sequential data (array or list of floats/integers).
