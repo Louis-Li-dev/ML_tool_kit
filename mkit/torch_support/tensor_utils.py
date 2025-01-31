@@ -130,7 +130,7 @@ def k_fold_validation(
         dataset: Union[torch.utils.data.Dataset, Tuple] = None,
         n_splits: int = 5,
         procedure: callable = None,
-        shuffle: bool = False,
+        shuffle: bool = True,
         **kwargs
     ) -> List[Any]:
     """
@@ -160,7 +160,7 @@ def k_fold_validation(
     if dataset is None:
         raise ValueError("Dataset must be provided.")
     results_from_fold = []
-    kfold = KFold(n_splits=n_splits, shuffle=shuffle, random_state=42)
+    kfold = KFold(n_splits=n_splits, shuffle=shuffle, random_state=42 if shuffle == True else None)
         
     if isinstance(dataset, Tuple):
         for fold, (train_ids, val_ids) in enumerate(kfold.split(*dataset)):
