@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from typing import Union, Callable
 from tqdm import tqdm
+
 def autoregressive(
     x: Union[np.ndarray, torch.Tensor],  # Initial input sequence
     model: Union[Callable, torch.nn.Module],  # Model to predict with

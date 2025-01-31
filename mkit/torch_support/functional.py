@@ -5,3 +5,4 @@ def layer_norm(x):
         mean = x.mean(dim=1, keepdim=True)
         normed_x = (x - mean) / std
     return normed_x
+

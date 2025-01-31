@@ -4,6 +4,9 @@ from torch.utils.data import TensorDataset, DataLoader, Dataset
 from torch_geometric.data import Data
 from typing import Union, Tuple, List, Callable, Any, Optional
 import numpy as np
+from tqdm import tqdm
+from torch.utils.data import Subset
+from sklearn.model_selection import KFold
 
 class MaskedGraphDataset:
     def __init__(self, data, mask_type):
@@ -119,6 +122,40 @@ def graph_x_y_split(data, train_ratio=0.6, val_ratio=0.2):
     data.test_mask[test_indices] = True
 
     return data
+def k_fold_validation(
+        dataset: torch.utils.data.Dataset = None,
+        n_splits: int = 5,
+        procedure: callable = None,
+        **kwargs
+    ):
+    """
+    Performs K-Fold Cross Validation on a given dataset.
+
+    Parameters:
+    - dataset (torch.utils.data.Dataset): The dataset to split.
+    - n_splits (int): Number of folds.
+    - procedure (callable): Function to execute on each fold. Should accept (train_subset, test_subset, **kwargs).
+    - **kwargs: Additional keyword arguments to pass to the procedure.
+
+    Examples:
+    >>> N_SPLITS = 5
+    >>> dataset = MNIST(root='./data', train=False, download=True, transform=transform)
+    >>> def procedure(train_subset, test_subset, **kwargs):
+    >>>     ...
+    >>> k_fold_validation(dataset, procedure=procedure)
+    """
+    if dataset is None:
+        raise ValueError("Dataset must be provided.")
+
+    kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+    for fold, (train_ids, val_ids) in enumerate(kfold.split(dataset)):
+        tqdm.write(f"Current Fold: [{fold + 1}/{n_splits}]")
+        tqdm.write(f"Training Data Size: {len(train_ids)}; Testing Data Size: {len(val_ids)}")
+        train_subset = Subset(dataset, train_ids)
+        test_subset = Subset(dataset, val_ids)
+        procedure(train_subset, test_subset, **kwargs)
+
 
 def sequential_x_y_split(
         data: Union[np.ndarray, List[float]],  # The input sequential data (array or list of floats/integers).
