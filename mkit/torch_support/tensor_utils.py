@@ -166,13 +166,11 @@ def k_fold_validation(
     flag = 0
 
     if isinstance(dataset, Tuple):
-        dataset = dataset
         flag = 1
+        k_split = kfold.split(*dataset)
     else:
-        dataset = [dataset]
-    
-
-    for fold, (train_ids, test_ids) in enumerate(kfold.split(*dataset)):
+        k_split = kfold.split(dataset)
+    for fold, (train_ids, test_ids) in enumerate(k_split):
         tqdm.write(f"Current Fold: [{fold + 1}/{n_splits}]")
         tqdm.write(f"Training Data Size: {len(train_ids)}; Testing Data Size: {len(test_ids)}")
         if flag == 1:
