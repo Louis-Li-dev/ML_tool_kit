@@ -19,7 +19,6 @@ def collect_parameters(
     
     for name, params in model.named_parameters():
         if param_type in name:  # Filter weights or biases
-            print(f"{name}: {params.shape}")
             param_dict[name] = params.cpu().detach().numpy()
 
     if not param_dict:
