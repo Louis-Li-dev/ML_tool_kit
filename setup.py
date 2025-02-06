@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="ML-toolkit",                
-    version="0.3.10",                 
+    version="0.3.11",                 
     author="AnSyu Li",
     author_email="yessir0621@gmail.com",
     url="https://github.com/Louis-Li-dev/ML_tool_kit",
@@ -15,7 +15,8 @@ setuptools.setup(
         "pandas==2.2.3",
         "matplotlib==3.10.0",
         "torch-geometric==2.5.3",
-        "scikit-learn==1.4.2"
+        "scikit-learn==1.4.2",
+        "seaborn==0.13.2"
     ],
     python_requires=">=3.7",          
 )
