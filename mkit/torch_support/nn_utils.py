@@ -2,60 +2,81 @@ import torch
 import torch.nn as nn
 from typing import Union, Tuple, Any, List, Callable
 from tqdm import tqdm
-        
+
+class IterStep(nn.Module):
+    def __init__(
+            self,
+        ):
+        super(IterStep, self).__init__()
+        pass
+    def __extract_batch(self, batch: Any = None) -> Tuple[Any, Any]:
+        """
+        Extracts (inputs, labels) from a batch.
+
+        Parameters
+        -----------
+        batch : Any
+
+        Returns
+        -------
+        inputs, labels : Tuple[Any, Any]
+        """
+        if batch is None:
+            raise ValueError("Loader can't be None")
+        inputs, labels = batch
+        return inputs, labels
+    def forward(
+        self,        
+        model: nn.Module,
+        criterion: nn.Module,
+        batch: Any,  # The entire batch (whatever the DataLoader yields)
+        device: torch.device,
+        optimizer: torch.optim.Optimizer = None,
+        train=True
+    ):
+        """
+        Default train step using the entire batch object.
+
+        1) Parse the batch into (inputs, targets).
+        2) Check shape/dtype (for example, for CrossEntropyLoss).
+        3) Move to device.
+        4) Forward pass, loss, backward pass, optimizer step.
+        Parameters
+        ----------
+        model : nn.Module
+            The PyTorch model to be trained.
+        criterion : nn.Module
+            The loss function (e.g., nn.CrossEntropyLoss).
+        batch : Any
+            One batch being processed.
+        device : torch.device
+            The device on which to perform training (e.g., 'cuda' or 'cpu').
+        optimizer : torch.optim.Optimizer, optional.
+            The optimizer for updating model parameters.
+        train : bool, optional
+            Whether to train the model (True) or evaluate it (False), by default True.
+        Returns
+        -------
+        torch.Tensor
+            The computed loss (scalar) for this batch.
+        """
+
+        inputs, targets = self.__extract_batch(batch)
+        inputs, targets = inputs.to(device), targets.to(device)
+        if train:
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+        else:
+            with torch.no_grad():    
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+        return loss
 
 
-def __extract_batch(batch: Any = None) -> Tuple[Any, Any]:
-    """
-    Extracts (inputs, labels) from a batch.
 
-    Parameters
-    -----------
-    batch : Any
-
-    Returns
-    -------
-    inputs, labels : Tuple[Any, Any]
-    """
-    if batch is None:
-        raise ValueError("Loader can't be None")
-    inputs, labels = batch
-    return inputs, labels
-
-def default_train_step(
-    model: nn.Module,
-    optimizer: torch.optim.Optimizer,
-    criterion: nn.Module,
-    batch: Any,  # The entire batch (whatever the DataLoader yields)
-    device: torch.device
-) -> torch.Tensor:
-    """
-    Default train step using the entire batch object.
-
-    1) Parse the batch into (inputs, targets).
-    2) Check shape/dtype (for example, for CrossEntropyLoss).
-    3) Move to device.
-    4) Forward pass, loss, backward pass, optimizer step.
-
-    Returns
-    -------
-    torch.Tensor
-        The computed loss (scalar) for this batch.
-    """
-
-    inputs, targets = __extract_batch(batch)
-
-
-
-    inputs, targets = inputs.to(device), targets.to(device)
-
-    optimizer.zero_grad()
-    outputs = model(inputs)
-    loss = criterion(outputs, targets)
-    loss.backward()
-    optimizer.step()
-
-    return loss
 
 
 def training_loop(
@@ -68,7 +89,7 @@ def training_loop(
     print_every: Union[int, None] = None,
     val_loader: torch.utils.data.DataLoader = None,
     keep_losses: bool = False,
-    train_step_func: Callable = default_train_step
+    train_step_module: nn.Module = IterStep()
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
@@ -95,31 +116,9 @@ def training_loop(
         DataLoader for the validation dataset. If None, no validation is performed.
     keep_losses : bool, optional
         If True, store training/validation losses in lists and return them.
-    train_step_func : callable, optional
-        A function with signature:
-           (model, optimizer, criterion, batch, device) -> torch.Tensor (loss).
-        Defaults to `default_train_step`, which expects (inputs, targets).
-    
-    - Implement your own training step function
-    
-    >>> def your_step_funct(
-    >>>     model: nn.Module,
-    >>>     optimizer: torch.optim.Optimizer,
-    >>>     criterion: nn.Module,
-    >>>     batch: Any,  # The entire batch (whatever the DataLoader yields)
-    >>>     device: torch.device 
-    >>> ) -> torch.Tensor: # loss
-    >>>     x, y, z, ... = batch
-    >>>     x = x.to(device)
-    >>>     y = y.to(device)
-    >>>     ...
-    >>>     optimizer.zero_grad()
-    >>>     output1, output2, ... = model(x, y, z, ...) # forward
-    >>>     loss = criterion(...) # loss
-    >>>     loss.backward() # back propagation
-    >>>     optimizer.step() 
-    >>>     return loss
-
+    train_step_module : nn.Module, optional
+        A module with signature:
+           (model, criterion, batch, device, optimizer, train) -> torch.Tensor (loss).
     Returns
     -------
     model : nn.Module
@@ -200,7 +199,7 @@ def training_loop(
             tqdm(train_loader, desc=f"EPOCH {epoch}/{epochs}", leave=True), start=1
         ):
             # -- Use the train_step_func which handles everything for this batch --
-            loss = train_step_func(
+            loss = train_step_module(
                 model=model,
                 optimizer=optimizer,
                 criterion=criterion,
@@ -232,11 +231,19 @@ def training_loop(
             val_loss = 0.0
             with torch.no_grad():
                 for val_data in val_loader:
-                    val_inputs, val_targets = __extract_batch(val_data)
-                    val_inputs, val_targets = val_inputs.to(device), val_targets.to(device)
+                    # val_inputs, val_targets = __extract_batch(val_data)
+                    # val_inputs, val_targets = val_inputs.to(device), val_targets.to(device)
 
-                    val_outputs = model(val_inputs)
-                    loss = criterion(val_outputs, val_targets)
+                    # val_outputs = model(val_inputs)
+                    # loss = criterion(val_outputs, val_targets)
+                    loss = train_step_module(
+                        model=model,
+                        criterion=criterion,
+                        batch=val_data,
+                        device=device,
+                        train=False
+                    )
+
                     val_loss += loss.item()
 
             val_loss /= len(val_loader)
