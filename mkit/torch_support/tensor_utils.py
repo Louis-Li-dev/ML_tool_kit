@@ -190,6 +190,7 @@ def k_fold_validation(
 def sequential_x_y_split(
         data: Union[np.ndarray, List[float]],  # The input sequential data (array or list of floats/integers).
         look_back: int = 10,  # The number of time steps to include in each input sequence (window size).
+        look_ahead: int = 1,  # The number of time steps to predict into the future.
         stride: int = 1,  # The step size for moving the window through the data.
         to_numpy: bool = True,  # Whether to return the results as NumPy arrays (True) or as lists (False).
 ) -> Tuple[Union[np.ndarray, List[List[float]]], Union[np.ndarray, List[float]]]:
@@ -199,13 +200,14 @@ def sequential_x_y_split(
     Parameters:
     - data (Union[np.ndarray, List[float]]): The sequential dataset to be split.
     - look_back (int, optional): The size of the input sequence (window). Default is 10.
+    - look_ahead (int, optional): The number of time steps to predict into the future. Default is 1.
     - stride (int, optional): The step size for moving the window. Default is 1.
     - to_numpy (bool, optional): If True, the outputs are converted to NumPy arrays. Default is True.
     
     Returns:
     - Tuple[Union[np.ndarray, List[List[float]]], Union[np.ndarray, List[float]]]:
         - x: The input sequences (shape: [num_samples, look_back]).
-        - y: The corresponding target values (shape: [num_samples]).
+        - y: The corresponding target values (shape: [num_samples, look_ahead]).
     
     Example:
     --------
@@ -214,16 +216,6 @@ def sequential_x_y_split(
     >>> x, y = sequential_x_y_split(data, look_back=3, stride=1, to_numpy=True)
     >>> print("X:", x)
     >>> print("Y:", y)
-    
-    Output:
-    --------
-    X: [[ 1  2  3]
-        [ 2  3  4]
-        [ 3  4  5]
-         ...
-        [16 17 18]
-        [17 18 19]]
-    Y: [ 4  5  6  ... 19 20]
     """
     x = []  # List to store input sequences.
     y = []  # List to store target values.
@@ -232,7 +224,7 @@ def sequential_x_y_split(
     for i in range(look_back, len(data), stride):
         # Append the input sequence (x) and target value (y)
         x.append(data[i - look_back: i])
-        y.append(data[i])
+        y.append(data[i: i + look_ahead])
 
     # Return as NumPy arrays or lists
     if to_numpy:
