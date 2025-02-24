@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from typing import Union, Tuple, Any, List, Callable
+from typing import Union, Tuple, Any, List
 from tqdm import tqdm
-
+import warnings
 class IterStep(nn.Module):
     def __init__(
             self,
@@ -89,7 +89,8 @@ def training_loop(
     print_every: Union[int, None] = None,
     val_loader: torch.utils.data.DataLoader = None,
     keep_losses: bool = False,
-    train_step_module: nn.Module = IterStep()
+    train_step_module: nn.Module = IterStep(),
+    early_stopping: bool = False,
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
@@ -119,6 +120,8 @@ def training_loop(
     train_step_module : nn.Module, optional
         A module with signature:
            (model, criterion, batch, device, optimizer, train) -> torch.Tensor (loss).
+    early_stopping : bool, optional, by default False
+        If the validation dataset is passed in, the model will be the one with the best validation score.
     Returns
     -------
     model : nn.Module
@@ -190,6 +193,9 @@ def training_loop(
     training_losses = []
     val_losses = []
 
+    best_model_state = None
+    best_val_loss = float('inf')
+
     for epoch in range(1, epochs + 1):
         model.train()
         running_loss = 0.0
@@ -249,8 +255,18 @@ def training_loop(
             val_loss /= len(val_loader)
             val_losses.append(val_loss)
             tqdm.write(f" Validation Loss: {val_loss:.4f}\n")
+            if early_stopping:
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    best_model_state = model.state_dict()
+
+        elif val_loader is None and early_stopping == True:
+            warnings.warn("Early stopping is turned off as there is no validation dataset.")
 
     tqdm.write("Training complete.")
+    if early_stopping and best_model_state is not None:
+        tqdm.write(f"Best validation loss: {best_val_loss}, model loaded with the selected parameters")
+        model.load_state_dict(best_model_state)
     model.eval()
     # Return based on keep_losses
     if keep_losses:
