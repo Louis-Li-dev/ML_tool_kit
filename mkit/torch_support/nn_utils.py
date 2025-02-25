@@ -91,6 +91,7 @@ def training_loop(
     keep_losses: bool = False,
     train_step_module: nn.Module = IterStep(),
     early_stopping: bool = False,
+    patience: int = 5,
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
@@ -122,6 +123,8 @@ def training_loop(
            (model, criterion, batch, device, optimizer, train) -> torch.Tensor (loss).
     early_stopping : bool, optional, by default False
         If the validation dataset is passed in, the model will be the one with the best validation score.
+    patience : int, optional, by default 5
+        If the early_stopping is set, every time the validation score doesn't improve, the counter increments until hitting patience to abort the training. 
     Returns
     -------
     model : nn.Module
@@ -195,7 +198,7 @@ def training_loop(
 
     best_model_state = None
     best_val_loss = float('inf')
-
+    count = 0
     for epoch in range(1, epochs + 1):
         model.train()
         running_loss = 0.0
@@ -259,6 +262,12 @@ def training_loop(
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     best_model_state = model.state_dict()
+                    count = 0
+                else:
+                    count += 1
+                if count > patience:
+                    tqdm.write(f"{count} times not improving the score. Training stops.")
+                    break
 
         elif val_loader is None and early_stopping == True:
             warnings.warn("Early stopping is turned off as there is no validation dataset.")
