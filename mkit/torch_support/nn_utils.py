@@ -266,13 +266,14 @@ def training_loop(
                 else:
                     count += 1
                 if count > patience:
-                    tqdm.write(f"{count} times not improving the score. Training stops.")
+                    tqdm.write(f"Training stopped after {count} consecutive iterations without improvement.")
                     break
 
         elif val_loader is None and early_stopping == True:
-            warnings.warn("Early stopping is turned off as there is no validation dataset.")
+            warnings.warn("Early stopping is disabled because no validation dataset is provided.")
 
-    tqdm.write("Training complete.")
+
+    tqdm.write("Training completed.")
     if early_stopping and best_model_state is not None:
         tqdm.write(f"Best validation loss: {best_val_loss}, model loaded with the selected parameters")
         model.load_state_dict(best_model_state)
