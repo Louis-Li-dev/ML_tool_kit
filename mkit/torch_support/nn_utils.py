@@ -3,6 +3,7 @@ import torch.nn as nn
 from typing import Union, Tuple, Any, List
 from tqdm import tqdm
 import warnings
+from explainability import visualize_weights_or_biases
 class IterStep(nn.Module):
     def __init__(
             self,
@@ -92,6 +93,7 @@ def training_loop(
     train_step_module: nn.Module = IterStep(),
     early_stopping: bool = False,
     patience: int = 5,
+    output_folder: str = None
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
@@ -125,6 +127,8 @@ def training_loop(
         If the validation dataset is passed in, the model will be the one with the best validation score.
     patience : int, optional, by default 5
         If the early_stopping is set, every time the validation score doesn't improve, the counter increments until hitting patience to abort the training. 
+    output_folder : str, optional
+        If the path is set, the model weights will be saved as figures.
     Returns
     -------
     model : nn.Module
@@ -234,6 +238,12 @@ def training_loop(
             f"Epoch [{epoch}/{epochs}] "
             f"Training Loss: {train_loss/len(train_loader):.4f}", end=" "
         )
+        if output_folder is not None:
+            visualize_weights_or_biases(
+                model, layer_index='all',
+                fig_title=f"Model Weights in Epoch {epoch}.",
+                output_dir=output_folder
+            )
         # Validate (if val_loader is provided)
         if val_loader is not None:
             model.eval()

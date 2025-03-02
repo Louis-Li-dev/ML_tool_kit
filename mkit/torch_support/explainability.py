@@ -29,7 +29,10 @@ def collect_parameters(
 def visualize_weights_or_biases(
         model: torch.nn.Module, 
         layer_index: Union[str, int] = None, 
-        param_type="weight"):
+        param_type="weight",
+        fig_title: str = "Model Weights",
+        output_dir: str = None,
+    ):
     """
     Visualizes the weights or biases of a PyTorch model.
     
@@ -40,6 +43,8 @@ def visualize_weights_or_biases(
             - If "all", visualizes all layers in subplots.
             - If None, defaults to the first layer.
         param_type (str): Either "weight" or "bias" to specify what to visualize.
+        fig_title (str): The title for the figure.
+        output_dir (str, optional): The location to store the figure.
     """
     param_dict = collect_parameters(model, param_type=param_type)
     layer_names = list(param_dict.keys())
@@ -60,7 +65,7 @@ def visualize_weights_or_biases(
     fig, axes = plt.subplots(1, num_layers\
         , figsize=(5 * num_layers, 4) if num_layers != 1 else (param_dict[layer_names[0]].shape[1] // 6 + 1,
          param_dict[layer_names[0]].shape[0] // 6 + 1))
-
+    fig.suptitle(fig_title)
     if num_layers == 1:
         axes = [axes]  # Ensure axes is iterable for single-layer cases
 
@@ -86,4 +91,6 @@ def visualize_weights_or_biases(
             label.set_fontname("Times New Roman")
 
     plt.tight_layout()
+    if output_dir:
+        plt.savefig(output_dir)
     plt.show()
