@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
+import os
 from typing import Union
 def collect_parameters(
         model: torch.nn.Module, 
@@ -95,5 +96,5 @@ def visualize_weights_or_biases(
 
     plt.tight_layout()
     if output_dir:
-        plt.savefig(output_dir)
+        plt.savefig(os.path.join(output_dir, fig_title))
     plt.show()
