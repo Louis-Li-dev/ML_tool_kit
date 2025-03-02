@@ -32,6 +32,7 @@ def visualize_weights_or_biases(
         param_type="weight",
         fig_title: str = "Model Weights",
         output_dir: str = None,
+        label_font_size: int = 10,
     ):
     """
     Visualizes the weights or biases of a PyTorch model.
@@ -45,6 +46,7 @@ def visualize_weights_or_biases(
         param_type (str): Either "weight" or "bias" to specify what to visualize.
         fig_title (str): The title for the figure.
         output_dir (str, optional): The location to store the figure.
+        label_font_size (int, optional): the size of the label fonts.
     """
     param_dict = collect_parameters(model, param_type=param_type)
     layer_names = list(param_dict.keys())
@@ -74,10 +76,10 @@ def visualize_weights_or_biases(
         sns.heatmap(params, cmap="coolwarm", center=0, annot=False, cbar=True, ax=ax)
 
         # Set font and labels consistently
-        font_config = {"fontname": "Times New Roman", "fontsize": 12, "fontweight": "bold"}
+        font_config = {"fontname": "Times New Roman", "fontsize": label_font_size + 2, "fontweight": "bold"}
         ax.set_title(f"{param_type.capitalize()} Visualization: {layer_name}", **font_config)
-        ax.set_xlabel("Neurons in Next Layer", fontname="Times New Roman", fontsize=10)
-        ax.set_ylabel("Neurons in Previous Layer", fontname="Times New Roman", fontsize=10)
+        ax.set_xlabel("Neurons in Next Layer", fontname="Times New Roman", fontsize=label_font_size)
+        ax.set_ylabel("Neurons in Previous Layer", fontname="Times New Roman", fontsize=label_font_size)
 
         # Tick label font
         ax.tick_params(axis='both', labelsize=9)
@@ -86,7 +88,7 @@ def visualize_weights_or_biases(
 
         # Colorbar font
         cbar = ax.collections[0].colorbar
-        cbar.ax.set_ylabel(f"{param_type.capitalize()} Magnitude", fontname="Times New Roman", fontsize=10)
+        cbar.ax.set_ylabel(f"{param_type.capitalize()} Magnitude", fontname="Times New Roman", fontsize=label_font_size)
         for label in cbar.ax.get_yticklabels():
             label.set_fontname("Times New Roman")
 

@@ -93,7 +93,8 @@ def training_loop(
     train_step_module: nn.Module = IterStep(),
     early_stopping: bool = False,
     patience: int = 5,
-    output_folder: str = None
+    output_folder: str = None,
+    **plot_args
 ) -> Union[nn.Module, Tuple[nn.Module, List[float]], Tuple[nn.Module, List[float], List[float]]]:
     """
     Trains a PyTorch model over multiple epochs, optionally validating after each epoch.
@@ -240,9 +241,10 @@ def training_loop(
         )
         if output_folder is not None:
             visualize_weights_or_biases(
-                model, layer_index='all',
+                model, layer_index='weights',
                 fig_title=f"Model Weights in Epoch {epoch}.",
-                output_dir=output_folder
+                output_dir=output_folder,
+                **plot_args
             )
         # Validate (if val_loader is provided)
         if val_loader is not None:
