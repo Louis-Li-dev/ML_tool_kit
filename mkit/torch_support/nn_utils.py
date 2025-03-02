@@ -3,7 +3,7 @@ import torch.nn as nn
 from typing import Union, Tuple, Any, List
 from tqdm import tqdm
 import warnings
-from explainability import visualize_weights_or_biases
+from mkit.torch_support.explainability import visualize_weights_or_biases
 class IterStep(nn.Module):
     def __init__(
             self,
@@ -250,11 +250,6 @@ def training_loop(
             val_loss = 0.0
             with torch.no_grad():
                 for val_data in val_loader:
-                    # val_inputs, val_targets = __extract_batch(val_data)
-                    # val_inputs, val_targets = val_inputs.to(device), val_targets.to(device)
-
-                    # val_outputs = model(val_inputs)
-                    # loss = criterion(val_outputs, val_targets)
                     loss = train_step_module(
                         model=model,
                         criterion=criterion,
