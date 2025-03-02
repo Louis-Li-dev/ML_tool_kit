@@ -67,7 +67,9 @@ def visualize_weights_or_biases(
     fig, axes = plt.subplots(1, num_layers\
         , figsize=(5 * num_layers, 4) if num_layers != 1 else (param_dict[layer_names[0]].shape[1] // 6 + 1,
          param_dict[layer_names[0]].shape[0] // 6 + 1))
-    fig.suptitle(fig_title)
+
+    font_config = {"fontname": "Times New Roman", "fontsize": label_font_size + 2, "fontweight": "bold"}
+    fig.suptitle(fig_title, **font_config)
     if num_layers == 1:
         axes = [axes]  # Ensure axes is iterable for single-layer cases
 
@@ -76,7 +78,6 @@ def visualize_weights_or_biases(
         sns.heatmap(params, cmap="coolwarm", center=0, annot=False, cbar=True, ax=ax)
 
         # Set font and labels consistently
-        font_config = {"fontname": "Times New Roman", "fontsize": label_font_size + 2, "fontweight": "bold"}
         ax.set_title(f"{param_type.capitalize()} Visualization: {layer_name}", **font_config)
         ax.set_xlabel("Neurons in Next Layer", fontname="Times New Roman", fontsize=label_font_size)
         ax.set_ylabel("Neurons in Previous Layer", fontname="Times New Roman", fontsize=label_font_size)
