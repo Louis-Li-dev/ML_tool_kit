@@ -34,6 +34,7 @@ def visualize_weights_or_biases(
         fig_title: str = "Model Weights",
         output_dir: str = None,
         label_font_size: int = 10,
+        dpi: int = 100
     ):
     """
     Visualizes the weights or biases of a PyTorch model.
@@ -48,6 +49,7 @@ def visualize_weights_or_biases(
         fig_title (str): The title for the figure.
         output_dir (str, optional): The location to store the figure.
         label_font_size (int, optional): the size of the label fonts.
+        dpi (int, optional): the quality of the figure.
     """
     param_dict = collect_parameters(model, param_type=param_type)
     layer_names = list(param_dict.keys())
@@ -67,7 +69,7 @@ def visualize_weights_or_biases(
     num_layers = len(layer_names)
     fig, axes = plt.subplots(1, num_layers\
         , figsize=(5 * num_layers, 4) if num_layers != 1 else (param_dict[layer_names[0]].shape[1] // 6 + 1,
-         param_dict[layer_names[0]].shape[0] // 6 + 1))
+         param_dict[layer_names[0]].shape[0] // 6 + 1), dpi=dpi)
 
     font_config = {"fontname": "Times New Roman", "fontsize": label_font_size + 2, "fontweight": "bold"}
     fig.suptitle(fig_title, **font_config)
@@ -93,7 +95,7 @@ def visualize_weights_or_biases(
         cbar.ax.set_ylabel(f"{param_type.capitalize()} Magnitude", fontname="Times New Roman", fontsize=label_font_size)
         for label in cbar.ax.get_yticklabels():
             label.set_fontname("Times New Roman")
-
+    
     plt.tight_layout()
     if output_dir:
         plt.savefig(os.path.join(output_dir, fig_title))
