@@ -221,7 +221,7 @@ def sequential_x_y_split(
     y = []  # List to store target values.
 
     # Slide the window through the data
-    for i in range(look_back, len(data), stride):
+    for i in range(look_back, len(data) - look_ahead + 1, stride):
         # Append the input sequence (x) and target value (y)
         x.append(data[i - look_back: i])
         y.append(data[i: i + look_ahead])
